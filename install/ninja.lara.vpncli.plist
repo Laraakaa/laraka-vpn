@@ -16,7 +16,7 @@
     <key>StandardOutPath</key>
     <string>/var/log/vpn-cli/logfile.log</string>
     <key>StandardErrorPath</key>
-    <string>var/log/vpn-cli/logfile-error.log</string>
+    <string>/var/log/vpn-cli/logfile-error.log</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
