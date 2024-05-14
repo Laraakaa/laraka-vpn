@@ -167,8 +167,7 @@ func (d *Daemon) Disconnect() error {
 	// Wait for the command to exit
 	err = d.command.Wait()
 	if err != nil {
-		utils.Logger.Error("Failed waiting for command to exit", zap.Error(err))
-		return err
+		utils.Logger.Error("Exited with error", zap.Error(err))
 	}
 
 	utils.Logger.Info("OpenConnect VPN stopped")

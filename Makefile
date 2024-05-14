@@ -1,6 +1,3 @@
-# The names of your binaries
-BINARY_NAME=vpn-cli
-
 # The Go compiler
 GO=go
 
@@ -8,12 +5,14 @@ GO=go
 all: build
 
 .PHONY: build
-build:
-	$(GO) build -o build/$(BINARY_NAME)
+build: build/vpn-cli
+
+build/vpn-cli:
+	$(GO) build -o build/vpn-cli
 
 .PHONY: install
 install: build
-	cp ./build/$(BINARY_NAME) ~/go/bin/$(BINARY_NAME)
+	cp ./build/vpn-cli ~/go/bin/vpn-cli
 
 .PHONY: install-service
 install-service: install
