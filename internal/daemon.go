@@ -139,6 +139,11 @@ func (d *Daemon) Connect() error {
 			utils.Logger.Error("Failed compiling regex: successful connection", zap.Error(err))
 		}
 
+		failedConnectionRegex, err := regexp.Compile(`Failed to reconnect to host ([a-zA-Z0-9.-]+): Can't assign requested address`)
+		if err != nil {
+			utils.Logger.Error("Failed compiling regex: failed connection", zap.Error(err))
+		}
+
 		for scanner.Scan() {
 			line := scanner.Text()
 			utils.Logger.Debug(fmt.Sprintf("OpenConnect: %s", line))
@@ -147,6 +152,11 @@ func (d *Daemon) Connect() error {
 				utils.Logger.Info("VPN connected successfully")
 				d.status.Status = VPNStatus_CONNECTED
 				d.MenuUpdate()
+			}
+
+			if failedConnectionRegex.MatchString(line) {
+				utils.Logger.Error("VPN connection failed, stopping.")
+				d.Disconnect()
 			}
 		}
 

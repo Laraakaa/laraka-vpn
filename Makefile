@@ -5,9 +5,7 @@ GO=go
 all: build
 
 .PHONY: build
-build: build/vpn-cli
-
-build/vpn-cli:
+build:
 	$(GO) build -o build/vpn-cli
 
 .PHONY: install
