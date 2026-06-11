@@ -140,6 +140,8 @@ func (c *Controller) Refresh(ctx context.Context) error {
 		c.attempt = 0
 		c.nextAttemptAt = time.Time{}
 		c.message = ""
+	case next == ipc.StateDisconnected:
+		c.message = ""
 	case action == actionReauth && prev != ipc.StateSessionRejected:
 		// First observation of the drop: start the backoff clock.
 		c.scheduleBackoffLocked()

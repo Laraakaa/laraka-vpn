@@ -317,6 +317,21 @@ func TestRefreshConnectedResetsBackoff(t *testing.T) {
 	}
 }
 
+func TestRefreshDisconnectedClearsStaleMessage(t *testing.T) {
+	clk := &fakeClock{t: time.Unix(1_700_000_000, 0)}
+	helper := &fakeHelper{resp: ipc.TunnelResponse{State: ipc.StateIdle}}
+	c := newTestController(&fakeAuth{fn: okResult}, helper, clk)
+	c.state = ipc.StateDisconnected
+	c.message = "helper unreachable: dial unix /var/run/laraka-vpn/helper.sock: connect: no such file or directory"
+
+	if err := c.Refresh(context.Background()); err != nil {
+		t.Fatalf("Refresh: unexpected error: %v", err)
+	}
+	if got := c.Message(); got != "" {
+		t.Errorf("Message() = %q after successful Refresh, want empty", got)
+	}
+}
+
 func TestRefreshDropSchedulesBackoffNoImmediateReauth(t *testing.T) {
 	clk := &fakeClock{t: time.Unix(1_700_000_000, 0)}
 	auth := &fakeAuth{fn: okResult}
