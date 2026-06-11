@@ -20,8 +20,8 @@
 	<key>NSHighResolutionCapable</key>
 	<string>True</string>
 	<!-- Hide the app from the Dock - it's a menu bar only app -->
-	<!--<key>LSUIElement</key>
-	<string>1</string>-->
+	<key>LSUIElement</key>
+	<string>1</string>
 	<!-- Required for network access -->
 	<key>NSAppTransportSecurity</key>
 	<dict>

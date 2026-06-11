@@ -6,7 +6,7 @@
     <string>ninja.lara.vpncli.agent</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/taabala3/go/bin/vpn-cli</string>
+        <string>/Users/taabala3/Applications/LarakaVPN.app/Contents/MacOS/vpn-cli</string>
         <string>agent</string>
         <string>--config-dir</string>
         <string>/Users/taabala3/.laraka-vpn</string>

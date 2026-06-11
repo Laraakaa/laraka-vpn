@@ -34,9 +34,21 @@ HELPER_PLIST=ninja.lara.vpncli.helper.plist
 AGENT_PLIST=ninja.lara.vpncli.agent.plist
 LAUNCH_DAEMONS=/Library/LaunchDaemons
 LAUNCH_AGENTS=$(HOME)/Library/LaunchAgents
+APP_INSTALL_DIR=$(HOME)/Applications
+
+# install-app deploys the .app bundle the agent must launch from: getlantern/systray
+# only creates an NSStatusBar item when the process runs inside a bundle (a bare
+# binary defaults to NSApplicationActivationPolicyProhibited and the menu-bar icon
+# silently never appears). The CLI (vpn-cli status/connect) still uses the bare
+# ~/go/bin symlink from the `install` target.
+.PHONY: install-app
+install-app: build-app
+	rm -rf $(APP_INSTALL_DIR)/$(BUNDLE_NAME)
+	mkdir -p $(APP_INSTALL_DIR)
+	cp -R build/$(BUNDLE_NAME) $(APP_INSTALL_DIR)/
 
 .PHONY: install-service
-install-service: install
+install-service: install install-app
 	sudo cp ./install/$(HELPER_PLIST) $(LAUNCH_DAEMONS)
 	sudo chown root:wheel $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
 	sudo chmod 644 $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
