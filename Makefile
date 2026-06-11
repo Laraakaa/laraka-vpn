@@ -2,6 +2,7 @@
 GO=go
 APP_NAME=Laraka VPN
 BUNDLE_NAME=LarakaVPN.app
+BUNDLE_ID=ninja.lara.vpn
 
 .PHONY: all
 all: build
@@ -18,6 +19,12 @@ build-app: build
 	mkdir -p build/$(BUNDLE_NAME)/Contents/Resources
 	cp build/vpn-cli build/$(BUNDLE_NAME)/Contents/MacOS/
 	cp Info.plist build/$(BUNDLE_NAME)/Contents/
+	# Sign the bundle ROOT (not just the inner binary) so the signature seals and
+	# binds Info.plist. macOS 26 (Tahoe) silently refuses to render an NSStatusItem
+	# for a process whose bundle is only ad-hoc/linker-signed with an unbound
+	# Info.plist (codesign reports Identifier=a.out, Info.plist=not bound). An
+	# ad-hoc (-) signature is sufficient here; it just has to seal the bundle.
+	codesign --force --deep --sign - --identifier $(BUNDLE_ID) build/$(BUNDLE_NAME)
 	@echo "✓ App bundle created at build/$(BUNDLE_NAME)"
 	@echo "  Run with: open build/$(BUNDLE_NAME)"
 
