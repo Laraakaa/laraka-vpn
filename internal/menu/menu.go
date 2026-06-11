@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
+	"fyne.io/systray"
 	"github.com/Laraakaa/laraka-vpn/internal/icon"
-	"github.com/getlantern/systray"
 	"go.uber.org/zap"
 )
 

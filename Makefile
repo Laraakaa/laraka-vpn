@@ -36,7 +36,7 @@ LAUNCH_DAEMONS=/Library/LaunchDaemons
 LAUNCH_AGENTS=$(HOME)/Library/LaunchAgents
 APP_INSTALL_DIR=$(HOME)/Applications
 
-# install-app deploys the .app bundle the agent must launch from: getlantern/systray
+# install-app deploys the .app bundle the agent must launch from: fyne.io/systray
 # only creates an NSStatusBar item when the process runs inside a bundle (a bare
 # binary defaults to NSApplicationActivationPolicyProhibited and the menu-bar icon
 # silently never appears). The CLI (vpn-cli status/connect) still uses the bare
