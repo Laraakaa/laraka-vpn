@@ -63,6 +63,11 @@ func (s *Supervisor) Run(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
+		// Tear down any active tunnel before the socket closes so that
+		// launchd unload / reinstall does not leave an orphaned openconnect
+		// process that blocks the next helper startup (reconcile will refuse
+		// to start if it sees a live PID in state.json).
+		s.disconnect()
 		_ = srv.Close()
 	}()
 
