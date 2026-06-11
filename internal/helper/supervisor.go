@@ -48,11 +48,13 @@ func (s *Supervisor) Run(ctx context.Context) error {
 	}
 
 	zero := uint32(0)
+	owner := s.cfg.AllowedUID
 	srv, err := ipc.Listen(ipc.ServerConfig{
 		SocketPath:         s.cfg.HelperSocket,
 		DirMode:            0o755, // /var/run/laraka-vpn is root:wheel 0755 (§10a)
 		SocketMode:         0o600,
-		RequireDirOwnerUID: &zero, // pin the socket dir to root
+		SocketOwnerUID:     &owner, // chown to agent uid so it can connect() (§4)
+		RequireDirOwnerUID: &zero,  // pin the socket dir to root
 		Authorize:          ipc.AllowUID(s.cfg.AllowedUID),
 	})
 	if err != nil {

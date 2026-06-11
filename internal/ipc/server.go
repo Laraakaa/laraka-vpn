@@ -42,6 +42,12 @@ type ServerConfig struct {
 	// SocketMode is the permission mode enforced on the socket inode.
 	// Defaults to 0o600 when zero.
 	SocketMode os.FileMode
+	// SocketOwnerUID, when non-nil, chowns the socket inode to this UID after
+	// bind (gid unchanged). A root-owned 0600 socket is unreachable by the agent
+	// UID: the kernel denies connect() with EACCES before AllowUID can run.
+	// Owning it by the agent UID keeps mode 0600 yet lets exactly that UID
+	// connect. Requires root, so the per-user socket leaves this nil.
+	SocketOwnerUID *uint32
 	// RequireDirOwnerUID, when non-nil, requires the parent directory to be
 	// owned by this UID; the server refuses to start otherwise. Use 0 to pin
 	// the privileged directory to root.
@@ -97,6 +103,13 @@ func Listen(cfg ServerConfig) (*Server, error) {
 	if err != nil {
 		_ = lock.Close()
 		return nil, err
+	}
+	if cfg.SocketOwnerUID != nil {
+		if err := os.Chown(cfg.SocketPath, int(*cfg.SocketOwnerUID), -1); err != nil {
+			_ = ln.Close()
+			_ = lock.Close()
+			return nil, fmt.Errorf("ipc: chown socket %s: %w", cfg.SocketPath, err)
+		}
 	}
 	return &Server{cfg: cfg, ln: ln, lock: lock}, nil
 }

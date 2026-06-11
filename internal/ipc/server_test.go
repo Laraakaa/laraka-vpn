@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 )
 
@@ -95,6 +96,31 @@ func TestServerClientRoundTrip(t *testing.T) {
 
 	srv.Close()
 	wg.Wait()
+}
+
+// TestSocketOwnerUIDChowns verifies that a non-nil SocketOwnerUID chowns the
+// socket inode. Chowning to a different uid needs root, so when running as the
+// current uid we assert the no-op case; the cross-uid case is root-only.
+func TestSocketOwnerUIDChowns(t *testing.T) {
+	sock := shortSocketPath(t)
+	want := uint32(os.Getuid())
+	srv, err := Listen(ServerConfig{
+		SocketPath:     sock,
+		SocketOwnerUID: &want,
+		Authorize:      AllowUID(want),
+	})
+	if err != nil {
+		t.Fatalf("Listen: %v", err)
+	}
+	defer srv.Close()
+
+	var st syscall.Stat_t
+	if err := syscall.Stat(sock, &st); err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if st.Uid != want {
+		t.Fatalf("socket uid = %d, want %d", st.Uid, want)
+	}
 }
 
 // TestServerAuthorizeDenialClosesConn confirms that when Authorize denies a
