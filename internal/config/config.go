@@ -77,6 +77,11 @@ type UserConfig struct {
 	// ServerCert is the --servercert pin used during --authenticate.
 	ServerCert string
 
+	// OpenconnectPath is the absolute path to the openconnect executable used
+	// for the --authenticate phase. Absolute only — never resolved through
+	// $PATH (§10c).
+	OpenconnectPath string
+
 	// AgentSocket is the user (CLI⇄agent) socket path.
 	AgentSocket string
 }
@@ -182,17 +187,19 @@ func LoadUserConfig(dir string) (*UserConfig, error) {
 
 	v.SetDefault("agent.profile", "/opt/cisco/anyconnect/profile/SWISSCOM-CERTRAS_client_profile.xml")
 	v.SetDefault("agent.server_arg", "Swisscom Secure RAS - Mobile ID")
+	v.SetDefault("agent.openconnect_path", "/opt/homebrew/bin/openconnect")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("config: reading user config: %w", err)
 	}
 
 	cfg := &UserConfig{
-		PKCS11URI:   strings.TrimSpace(v.GetString("agent.pkcs11_uri")),
-		Profile:     v.GetString("agent.profile"),
-		ServerArg:   v.GetString("agent.server_arg"),
-		ServerCert:  strings.TrimSpace(v.GetString("agent.server_cert")),
-		AgentSocket: v.GetString("ipc.agent_socket"),
+		PKCS11URI:       strings.TrimSpace(v.GetString("agent.pkcs11_uri")),
+		Profile:         v.GetString("agent.profile"),
+		ServerArg:       v.GetString("agent.server_arg"),
+		ServerCert:      strings.TrimSpace(v.GetString("agent.server_cert")),
+		OpenconnectPath: v.GetString("agent.openconnect_path"),
+		AgentSocket:     v.GetString("ipc.agent_socket"),
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, err
@@ -212,6 +219,9 @@ func (c *UserConfig) validate() error {
 	}
 	if c.ServerArg == "" {
 		return fmt.Errorf("config: agent.server_arg must not be empty")
+	}
+	if !filepath.IsAbs(c.OpenconnectPath) {
+		return fmt.Errorf("config: agent.openconnect_path must be absolute, got %q", c.OpenconnectPath)
 	}
 	return nil
 }

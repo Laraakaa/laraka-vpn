@@ -144,10 +144,11 @@ func TestRootConfigValidate(t *testing.T) {
 func TestUserConfigValidate(t *testing.T) {
 	base := func() *UserConfig {
 		return &UserConfig{
-			PKCS11URI:  "pkcs11:token=Keychain;id=%A3",
-			Profile:    "/opt/cisco/anyconnect/profile/SWISSCOM-CERTRAS_client_profile.xml",
-			ServerArg:  "Swisscom Secure RAS - Mobile ID",
-			ServerCert: "pin-sha256:gnKCGJ6tmhP2eTEjY8ZRT1HSHMzWmAMB0K2VLxBJZVY=",
+			PKCS11URI:       "pkcs11:token=Keychain;id=%A3",
+			Profile:         "/opt/cisco/anyconnect/profile/SWISSCOM-CERTRAS_client_profile.xml",
+			ServerArg:       "Swisscom Secure RAS - Mobile ID",
+			ServerCert:      "pin-sha256:gnKCGJ6tmhP2eTEjY8ZRT1HSHMzWmAMB0K2VLxBJZVY=",
+			OpenconnectPath: "/opt/homebrew/bin/openconnect",
 		}
 	}
 	if err := base().validate(); err != nil {
@@ -162,6 +163,11 @@ func TestUserConfigValidate(t *testing.T) {
 	bad.ServerArg = ""
 	if err := bad.validate(); err == nil {
 		t.Fatal("validate() accepted empty server_arg")
+	}
+	bad = base()
+	bad.OpenconnectPath = "openconnect"
+	if err := bad.validate(); err == nil {
+		t.Fatal("validate() accepted relative openconnect path")
 	}
 }
 
