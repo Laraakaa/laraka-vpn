@@ -44,6 +44,9 @@ func New(ctrl Controller, log *zap.Logger) *Menu {
 // invokes onExit (if non-nil) after the loop returns. Must be called from the
 // main goroutine.
 func (m *Menu) Run(onExit func()) {
+	// Promote the process to an accessory app before systray starts so the
+	// status-bar item can render even when launchd exec's the binary directly.
+	ensureMenuBarApp()
 	systray.Run(m.onReady, func() {
 		m.act.log.Info("menu: exiting")
 		if onExit != nil {
