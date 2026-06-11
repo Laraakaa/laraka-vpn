@@ -63,7 +63,6 @@ func (m *Menu) Quit() { systray.Quit() }
 // one background loop that handles clicks and periodic refreshes.
 func (m *Menu) onReady() {
 	systray.SetTemplateIcon(icon.Data, icon.Data)
-	systray.SetTitle("VPN")
 	systray.SetTooltip("Laraka VPN Client")
 
 	m.mStatus = systray.AddMenuItem("Status: starting", "Current VPN status")
@@ -107,6 +106,7 @@ func (m *Menu) loop() {
 // the live systray items.
 func (m *Menu) render() {
 	v := viewFor(m.act.ctrl.State(), m.act.ctrl.Message())
+	systray.SetTitle(v.barTitle)
 	m.mStatus.SetTitle(v.status)
 	systray.SetTooltip(v.tooltip)
 	setEnabled(m.mConnect, v.connectEnabled)

@@ -55,6 +55,10 @@ func (a actions) refresh(ctx context.Context) {
 // controller's reported state. Keeping this a plain value makes the
 // state->display mapping trivially testable.
 type view struct {
+	// barTitle is the compact string shown permanently in the macOS menu bar
+	// (e.g. "● VPN" or "○ VPN"). It is set via systray.SetTitle on every
+	// render so the connection state is always visible without opening the menu.
+	barTitle          string
 	status            string
 	tooltip           string
 	connectEnabled    bool
@@ -69,11 +73,36 @@ func viewFor(state ipc.State, message string) view {
 	if message != "" {
 		tooltip = "Laraka VPN - " + hs + ": " + message
 	}
+	sym := stateSymbol(state)
 	return view{
-		status:            "Status: " + hs,
+		barTitle:          sym + " VPN",
+		status:            sym + " " + hs,
 		tooltip:           tooltip,
 		connectEnabled:    connectEnabled(state),
 		disconnectEnabled: disconnectEnabled(state),
+	}
+}
+
+// stateSymbol returns a single Unicode indicator glyph for the given state so
+// the menu-bar title and status item convey connection health at a glance.
+//
+//	● – tunnel is up (connected)
+//	◐ – tunnel alive but degraded / reconnecting
+//	⋯ – transient in-progress states (authenticating, connecting)
+//	✕ – terminal error (auth_failed, session_rejected)
+//	○ – no active tunnel (idle, disconnected, unknown)
+func stateSymbol(s ipc.State) string {
+	switch s {
+	case ipc.StateConnected:
+		return "●"
+	case ipc.StateDegraded:
+		return "◐"
+	case ipc.StateAuthenticating, ipc.StateConnecting:
+		return "⋯"
+	case ipc.StateAuthFailed, ipc.StateSessionRejected:
+		return "✕"
+	default:
+		return "○"
 	}
 }
 

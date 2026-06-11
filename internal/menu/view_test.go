@@ -78,8 +78,11 @@ func TestActionsRefreshInvokesController(t *testing.T) {
 
 func TestViewForStatusAndTooltip(t *testing.T) {
 	v := viewFor(ipc.StateConnected, "")
-	if v.status != "Status: connected" {
-		t.Errorf("status = %q, want %q", v.status, "Status: connected")
+	if v.status != "● connected" {
+		t.Errorf("status = %q, want %q", v.status, "● connected")
+	}
+	if v.barTitle != "● VPN" {
+		t.Errorf("barTitle = %q, want %q", v.barTitle, "● VPN")
 	}
 	if v.tooltip != "Laraka VPN - connected" {
 		t.Errorf("tooltip = %q, want %q", v.tooltip, "Laraka VPN - connected")
@@ -96,8 +99,34 @@ func TestViewForTooltipIncludesMessage(t *testing.T) {
 
 func TestViewForEmptyStateIsUnknown(t *testing.T) {
 	v := viewFor(ipc.State(""), "")
-	if v.status != "Status: unknown" {
-		t.Errorf("status = %q, want %q", v.status, "Status: unknown")
+	if v.status != "○ unknown" {
+		t.Errorf("status = %q, want %q", v.status, "○ unknown")
+	}
+	if v.barTitle != "○ VPN" {
+		t.Errorf("barTitle = %q, want %q", v.barTitle, "○ VPN")
+	}
+}
+
+func TestStateSymbol(t *testing.T) {
+	cases := []struct {
+		state ipc.State
+		want  string
+	}{
+		{ipc.StateConnected, "●"},
+		{ipc.StateDegraded, "◐"},
+		{ipc.StateAuthenticating, "⋯"},
+		{ipc.StateConnecting, "⋯"},
+		{ipc.StateAuthFailed, "✕"},
+		{ipc.StateSessionRejected, "✕"},
+		{ipc.StateIdle, "○"},
+		{ipc.StateDisconnected, "○"},
+		{ipc.StateUnknown, "○"},
+		{ipc.State(""), "○"},
+	}
+	for _, tc := range cases {
+		if got := stateSymbol(tc.state); got != tc.want {
+			t.Errorf("stateSymbol(%s) = %q, want %q", tc.state, got, tc.want)
+		}
 	}
 }
 
