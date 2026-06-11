@@ -110,26 +110,26 @@ func stateSymbol(s ipc.State) string {
 func humanState(s ipc.State) string {
 	switch s {
 	case ipc.StateIdle:
-		return "idle"
+		return "Idle"
 	case ipc.StateAuthenticating:
-		return "authenticating"
+		return "Authenticating"
 	case ipc.StateAuthFailed:
-		return "authentication failed"
+		return "Authentication failed"
 	case ipc.StateConnecting:
-		return "connecting"
+		return "Connecting"
 	case ipc.StateConnected:
-		return "connected"
+		return "Connected"
 	case ipc.StateDegraded:
-		return "degraded"
+		return "Degraded"
 	case ipc.StateSessionRejected:
-		return "session rejected"
+		return "Session rejected"
 	case ipc.StateDisconnected:
-		return "disconnected"
+		return "Disconnected"
 	case ipc.StateUnknown:
-		return "unknown"
+		return "Unknown"
 	default:
 		if s == "" {
-			return "unknown"
+			return "Unknown"
 		}
 		return string(s)
 	}

@@ -78,20 +78,20 @@ func TestActionsRefreshInvokesController(t *testing.T) {
 
 func TestViewForStatusAndTooltip(t *testing.T) {
 	v := viewFor(ipc.StateConnected, "")
-	if v.status != "● connected" {
-		t.Errorf("status = %q, want %q", v.status, "● connected")
+	if v.status != "● Connected" {
+		t.Errorf("status = %q, want %q", v.status, "● Connected")
 	}
 	if v.barTitle != "● VPN" {
 		t.Errorf("barTitle = %q, want %q", v.barTitle, "● VPN")
 	}
-	if v.tooltip != "Laraka VPN - connected" {
-		t.Errorf("tooltip = %q, want %q", v.tooltip, "Laraka VPN - connected")
+	if v.tooltip != "Laraka VPN - Connected" {
+		t.Errorf("tooltip = %q, want %q", v.tooltip, "Laraka VPN - Connected")
 	}
 }
 
 func TestViewForTooltipIncludesMessage(t *testing.T) {
 	v := viewFor(ipc.StateAuthFailed, "keychain not authorized")
-	want := "Laraka VPN - authentication failed: keychain not authorized"
+	want := "Laraka VPN - Authentication failed: keychain not authorized"
 	if v.tooltip != want {
 		t.Errorf("tooltip = %q, want %q", v.tooltip, want)
 	}
@@ -99,8 +99,8 @@ func TestViewForTooltipIncludesMessage(t *testing.T) {
 
 func TestViewForEmptyStateIsUnknown(t *testing.T) {
 	v := viewFor(ipc.State(""), "")
-	if v.status != "○ unknown" {
-		t.Errorf("status = %q, want %q", v.status, "○ unknown")
+	if v.status != "○ Unknown" {
+		t.Errorf("status = %q, want %q", v.status, "○ Unknown")
 	}
 	if v.barTitle != "○ VPN" {
 		t.Errorf("barTitle = %q, want %q", v.barTitle, "○ VPN")
@@ -159,15 +159,15 @@ func TestConnectDisconnectEnablement(t *testing.T) {
 
 func TestHumanStateAllKnown(t *testing.T) {
 	cases := map[ipc.State]string{
-		ipc.StateIdle:            "idle",
-		ipc.StateAuthenticating:  "authenticating",
-		ipc.StateAuthFailed:      "authentication failed",
-		ipc.StateConnecting:      "connecting",
-		ipc.StateConnected:       "connected",
-		ipc.StateDegraded:        "degraded",
-		ipc.StateSessionRejected: "session rejected",
-		ipc.StateDisconnected:    "disconnected",
-		ipc.StateUnknown:         "unknown",
+		ipc.StateIdle:            "Idle",
+		ipc.StateAuthenticating:  "Authenticating",
+		ipc.StateAuthFailed:      "Authentication failed",
+		ipc.StateConnecting:      "Connecting",
+		ipc.StateConnected:       "Connected",
+		ipc.StateDegraded:        "Degraded",
+		ipc.StateSessionRejected: "Session rejected",
+		ipc.StateDisconnected:    "Disconnected",
+		ipc.StateUnknown:         "Unknown",
 	}
 	for state, want := range cases {
 		if got := humanState(state); got != want {
