@@ -30,6 +30,30 @@ func TestClassifyLine(t *testing.T) {
 			wantDetail: "192.168.50.7",
 		},
 		{
+			// Regression for the connect-stuck bug: a dual-stack tunnel
+			// prints " + <ipv6>/<prefix>" before the comma and the second
+			// transport may be "in progress" (or "disabled"), so the old
+			// pattern that required IPv4 immediately before "," and a literal
+			// "DTLS connected" never matched and state hung at connecting.
+			name:       "dual-stack success with ESP in progress",
+			line:       "Configured as 10.45.12.175 + fdab:c123:d456:e789::2da/64, with SSL connected and ESP in progress",
+			wantOK:     true,
+			wantState:  ipc.StateConnected,
+			wantDetail: "10.45.12.175",
+		},
+		{
+			name:       "success with SSL compression token",
+			line:       "Configured as 10.1.2.3, with SSL + deflate connected and DTLS + lzs connected",
+			wantOK:     true,
+			wantState:  ipc.StateConnected,
+			wantDetail: "10.1.2.3",
+		},
+		{
+			name:   "ssl not yet connected stays unmatched",
+			line:   "Configured as 10.1.2.3 + fdab:c123:d456:e789::2da/64, with SSL in progress and DTLS in progress",
+			wantOK: false,
+		},
+		{
 			name:       "failure",
 			line:       "Failed to reconnect to host gw1.example.com: Can't assign requested address",
 			wantOK:     true,

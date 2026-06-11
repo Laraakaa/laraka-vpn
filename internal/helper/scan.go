@@ -12,9 +12,20 @@ import (
 // patterns are compiled once and matched against each line openconnect writes
 // to its merged stdout/stderr stream.
 var (
-	// successRe matches the line openconnect prints once the tunnel is fully
-	// established; capture group 1 is the assigned tunnel IP address.
-	successRe = regexp.MustCompile(`Configured as (\d+\.\d+\.\d+\.\d+), with SSL connected and DTLS connected`)
+	// successRe matches the line openconnect prints once the tunnel is up;
+	// capture group 1 is the assigned IPv4 tunnel address.
+	//
+	// openconnect (main.c) prints this with the format string
+	//   "Configured as %s%s%s, with SSL%s%s %s and %s%s%s %s"
+	// where the leading %s%s%s is addr + " + " + netmask6 (so a dual-stack
+	// tunnel reads "Configured as 10.0.0.1 + fd00::1/64, with SSL ...") and
+	// the %s%s after "with SSL" is an optional " + <compression>" tag. We
+	// therefore must NOT require the address to be immediately followed by a
+	// comma, and must tolerate an optional compression token before the SSL
+	// state word. We key success off "SSL connected" alone: the tunnel routes
+	// over TLS regardless of whether DTLS/ESP has finished negotiating (it may
+	// legitimately be "in progress" or "disabled").
+	successRe = regexp.MustCompile(`Configured as (\d+\.\d+\.\d+\.\d+).*with SSL(?: \+ \S+)? connected`)
 	// failureRe matches a fatal reconnect failure; capture group 1 is the host.
 	failureRe = regexp.MustCompile(`Failed to reconnect to host ([a-zA-Z0-9.-]+): Can't assign requested address`)
 )
