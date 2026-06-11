@@ -30,16 +30,28 @@ run-app: build-app
 install: build
 	ln -sf $(CURDIR)/build/vpn-cli ~/go/bin/vpn-cli
 
+HELPER_PLIST=ninja.lara.vpncli.helper.plist
+AGENT_PLIST=ninja.lara.vpncli.agent.plist
+LAUNCH_DAEMONS=/Library/LaunchDaemons
+LAUNCH_AGENTS=$(HOME)/Library/LaunchAgents
+
 .PHONY: install-service
 install-service: install
-	sudo cp ./install/ninja.lara.vpncli.plist /Library/LaunchDaemons
-	sudo chmod 644 /Library/LaunchDaemons/ninja.lara.vpncli.plist
-	sudo launchctl load -w /Library/LaunchDaemons/ninja.lara.vpncli.plist
+	sudo cp ./install/$(HELPER_PLIST) $(LAUNCH_DAEMONS)
+	sudo chown root:wheel $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
+	sudo chmod 644 $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
+	sudo launchctl load -w $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
+	mkdir -p $(LAUNCH_AGENTS)
+	cp ./install/$(AGENT_PLIST) $(LAUNCH_AGENTS)
+	chmod 644 $(LAUNCH_AGENTS)/$(AGENT_PLIST)
+	launchctl load -w $(LAUNCH_AGENTS)/$(AGENT_PLIST)
 
 .PHONY: uninstall-service
 uninstall-service:
-	sudo launchctl unload /Library/LaunchDaemons/ninja.lara.vpncli.plist
-	sudo rm /Library/LaunchDaemons/ninja.lara.vpncli.plist
+	-launchctl unload $(LAUNCH_AGENTS)/$(AGENT_PLIST)
+	-rm $(LAUNCH_AGENTS)/$(AGENT_PLIST)
+	-sudo launchctl unload $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
+	-sudo rm $(LAUNCH_DAEMONS)/$(HELPER_PLIST)
 
 .PHONY: reinstall-service
 reinstall-service: uninstall-service install-service

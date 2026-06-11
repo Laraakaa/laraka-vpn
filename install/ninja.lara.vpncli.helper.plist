@@ -3,20 +3,20 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>ninja.lara.vpncli</string>
+    <string>ninja.lara.vpncli.helper</string>
     <key>ProgramArguments</key>
     <array>
         <string>/Users/taabala3/go/bin/vpn-cli</string>
-        <string>start</string>
+        <string>helper</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/var/log/vpn-cli/logfile.log</string>
+    <string>/var/log/vpn-cli/helper.log</string>
     <key>StandardErrorPath</key>
-    <string>/var/log/vpn-cli/logfile-error.log</string>
+    <string>/var/log/vpn-cli/helper-error.log</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
