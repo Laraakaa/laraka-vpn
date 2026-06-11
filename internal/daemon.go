@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/Laraakaa/laraka-vpn/utils"
 	zmq "github.com/pebbe/zmq4"
@@ -27,7 +28,9 @@ type Daemon struct {
 type DaemonCommand string
 
 const (
-	DaemonCommand_STATUS = "status"
+	DaemonCommand_STATUS     = "status"
+	DaemonCommand_CONNECT    = "connect"
+	DaemonCommand_DISCONNECT = "disconnect"
 )
 
 type DaemonStatus struct {
@@ -91,21 +94,52 @@ func (d *Daemon) Start() error {
 		msg, err = d.socket.Recv(0)
 		if err != nil {
 			utils.Logger.Error("Failed receiving message", zap.Error(err))
+			continue
 		}
 		utils.Logger.Debug("Received message", zap.String("message", msg))
 
 		switch DaemonCommand(msg) {
 		case DaemonCommand_STATUS:
 			d.handleStatus()
+		case DaemonCommand_CONNECT:
+			// Start connection asynchronously to keep daemon responsive
+			go func() {
+				err := d.Connect()
+				if err != nil {
+					utils.Logger.Error("Failed to connect", zap.Error(err))
+				}
+			}()
+			// Send immediate acknowledgment
+			d.sendMessage(map[string]string{"status": "connecting"})
+		case DaemonCommand_DISCONNECT:
+			err := d.Disconnect()
+			if err != nil {
+				utils.Logger.Error("Failed to disconnect", zap.Error(err))
+				d.sendMessage(map[string]string{"status": "error", "message": err.Error()})
+			} else {
+				d.sendMessage(map[string]string{"status": "disconnected"})
+			}
 		}
 	}
 }
 
 func (d *Daemon) Connect() error {
-	if d.status.Status == VPNStatus_DISCONNECTED {
-		d.status.Status = VPNStatus_CONNECTING
-		d.MenuUpdate()
+	// Ensure only one VPN connection attempt at a time
+	if d.status.Status == VPNStatus_CONNECTING || d.status.Status == VPNStatus_CONNECTED {
+		utils.Logger.Warn("VPN is already connecting or connected; ignoring connect request")
+		return fmt.Errorf("VPN is already connecting or connected")
+	}
 
+	d.status.Status = VPNStatus_CONNECTING
+	d.MenuUpdate()
+
+	slices := viper.GetStringSlice("vpn.slices")
+	utils.Logger.Debug("Slices obtained from config", zap.Strings("slices", slices))
+
+	maxRetries := 3
+	baseBackoff := 1 // seconds
+	var lastErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
 		d.command = exec.Command(
 			"openconnect",
 			"--protocol=anyconnect",
@@ -114,23 +148,34 @@ func (d *Daemon) Connect() error {
 			"--sslkey=/etc/vpn-cli/cert.key",
 			"--certificate=/etc/vpn-cli/cert.pem",
 			fmt.Sprintf("--servercert=%s", viper.GetString("vpn.server_cert")),
-			"-s vpn-slice "+strings.Join(viper.GetStringSlice("vpn.slices"), " "),
+			"-s vpn-slice "+strings.Join(slices, " "),
 			"Swisscom Secure RAS - Mobile ID",
 		)
+		utils.Logger.Debug("Starting OpenConnect VPN", zap.String("command", d.command.String()), zap.Int("attempt", attempt))
 
 		stdoutPipe, err := d.command.StdoutPipe()
 		if err != nil {
 			utils.Logger.Error("Failed getting stdout pipe", zap.Error(err))
-			return err
+			lastErr = err
+			break
 		}
 		d.command.Stderr = d.command.Stdout
 
 		err = d.command.Start()
 		if err != nil {
 			utils.Logger.Error("Failed starting command", zap.Error(err))
-			return err
+			lastErr = err
+			// Exponential backoff before retry
+			if attempt < maxRetries {
+				utils.Logger.Warn("Retrying VPN connection", zap.Int("attempt", attempt))
+				backoff := baseBackoff << (attempt - 1)
+				utils.Logger.Info("Waiting before retry", zap.Int("seconds", backoff))
+				time.Sleep(time.Duration(backoff) * time.Second)
+				continue
+			}
+			break
 		}
-		utils.Logger.Info("OpenConnect VPN started")
+		utils.Logger.Info("OpenConnect VPN started", zap.Int("attempt", attempt))
 
 		scanner := bufio.NewScanner(stdoutPipe)
 
@@ -144,28 +189,58 @@ func (d *Daemon) Connect() error {
 			utils.Logger.Error("Failed compiling regex: failed connection", zap.Error(err))
 		}
 
+		connectionSuccess := false
 		for scanner.Scan() {
 			line := scanner.Text()
+			// Only log at debug level, not info, to reduce log spam
 			utils.Logger.Debug(fmt.Sprintf("OpenConnect: %s", line))
 
 			if successfulConnectionRegex.MatchString(line) {
 				utils.Logger.Info("VPN connected successfully")
 				d.status.Status = VPNStatus_CONNECTED
 				d.MenuUpdate()
+				connectionSuccess = true
+				break
 			}
 
 			if failedConnectionRegex.MatchString(line) {
 				utils.Logger.Error("VPN connection failed, stopping.")
 				d.Disconnect()
+				lastErr = fmt.Errorf("VPN connection failed")
+				break
 			}
 		}
 
+		if connectionSuccess {
+			return nil
+		}
+
+		// If not successful, exponential backoff before retry
+		if attempt < maxRetries {
+			utils.Logger.Warn("Retrying VPN connection", zap.Int("attempt", attempt))
+			backoff := baseBackoff << (attempt - 1)
+			utils.Logger.Info("Waiting before retry", zap.Int("seconds", backoff))
+			time.Sleep(time.Duration(backoff) * time.Second)
+		}
 	}
 
-	return nil
+	d.status.Status = VPNStatus_DISCONNECTED
+	d.MenuUpdate()
+	if lastErr != nil {
+		utils.Logger.Error("Failed to connect after retries", zap.Error(lastErr))
+		return lastErr
+	}
+	return fmt.Errorf("Failed to connect after retries")
 }
 
 func (d *Daemon) Disconnect() error {
+	if d.command == nil || d.command.Process == nil {
+		utils.Logger.Warn("No VPN process to disconnect")
+		d.status.Status = VPNStatus_DISCONNECTED
+		d.MenuUpdate()
+		return nil
+	}
+
 	err := d.command.Process.Signal(syscall.SIGTERM)
 	if err != nil {
 		utils.Logger.Error("Failed sending SIGTERM to command", zap.Error(err))

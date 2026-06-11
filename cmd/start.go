@@ -36,6 +36,8 @@ var runCmd = &cobra.Command{
 			}
 		}()
 
+		utils.Logger.Debug("Daemon started", zap.String("address", cmd.Flag("address").Value.String()))
+
 		daemon.StartMenu()
 
 		return nil

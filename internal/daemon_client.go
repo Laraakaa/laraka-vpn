@@ -48,12 +48,14 @@ func NewDaemonClient(address string) (*DaemonClient, error) {
 		fmt.Printf("Received reply %d [ %s ]\n", i, msg)
 	} */
 
+	// defer dc.socket.Close()
+
 	return &dc, nil
 }
 
 func (dc *DaemonClient) GetStatus() (*DaemonStatus, error) {
 	utils.Logger.Debug("Getting status from daemon")
-	_, err := dc.socket.SendMessage("status")
+	_, err := dc.socket.SendMessage(DaemonCommand_STATUS)
 	if err != nil {
 		utils.Logger.Error("Failed sending message", zap.Error(err))
 		return nil, err
@@ -73,4 +75,34 @@ func (dc *DaemonClient) GetStatus() (*DaemonStatus, error) {
 	}
 
 	return &status, nil
+}
+
+func (dc *DaemonClient) Connect() error {
+	utils.Logger.Debug("Sending connect command to daemon")
+	_, err := dc.socket.SendMessage(DaemonCommand_CONNECT)
+	if err != nil {
+		utils.Logger.Error("Failed sending connect command", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (dc *DaemonClient) Disconnect() error {
+	utils.Logger.Debug("Sending disconnect command to daemon")
+	_, err := dc.socket.SendMessage(DaemonCommand_DISCONNECT)
+	if err != nil {
+		utils.Logger.Error("Failed sending disconnect command", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (dc *DaemonClient) Close() {
+	utils.Logger.Debug("Closing daemon client")
+	if dc.socket != nil {
+		dc.socket.Close()
+	}
+	if dc.zctx != nil {
+		dc.zctx.Term()
+	}
 }

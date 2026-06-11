@@ -1,3 +1,17 @@
 .vscode
 build/
 *.hex
+
+# macOS cruft
+.DS_Store
+
+# OpenCode runtime
+.omo/
+
+# Identity / secret material must never be committed
+certs.pem
+certs
+*.pem
+*.key
+*.p12
+*.pfx
